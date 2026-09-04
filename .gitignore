@@ -1,0 +1,4 @@
+.codex_err.log
+.codex_prompt.txt
+node_modules/
+dist/
