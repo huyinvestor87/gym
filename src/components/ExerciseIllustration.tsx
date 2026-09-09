@@ -859,6 +859,84 @@ export function ExerciseIllustration({
           id={uid}
         >{`${e.en} — minh họa chuyển động; ${e.equipment}`}</title>
         <defs>
+          <linearGradient id={`${uid}-scene`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#24382c" />
+            <stop offset=".7" stopColor="#132019" />
+            <stop offset="1" stopColor="#0c1410" />
+          </linearGradient>
+          <linearGradient
+            id={`${uid}-body`}
+            x1="70"
+            y1="30"
+            x2="220"
+            y2="190"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0" stopColor="#f0ff9a" />
+            <stop offset=".42" stopColor="#c6f36a" />
+            <stop offset="1" stopColor="#72a92f" />
+          </linearGradient>
+          <linearGradient
+            id={`${uid}-limb`}
+            x1="70"
+            y1="30"
+            x2="220"
+            y2="190"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0" stopColor="#d9f0dd" />
+            <stop offset=".5" stopColor="#9bc5aa" />
+            <stop offset="1" stopColor="#547c68" />
+          </linearGradient>
+          <linearGradient
+            id={`${uid}-rear-limb`}
+            x1="70"
+            y1="30"
+            x2="220"
+            y2="190"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0" stopColor="#9ebdab" />
+            <stop offset="1" stopColor="#3d6252" />
+          </linearGradient>
+          <linearGradient
+            id={`${uid}-metal`}
+            x1="40"
+            y1="20"
+            x2="290"
+            y2="210"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0" stopColor="#d2ded7" />
+            <stop offset=".25" stopColor="#788e82" />
+            <stop offset=".7" stopColor="#3e5549" />
+            <stop offset="1" stopColor="#9aaca2" />
+          </linearGradient>
+          <radialGradient id={`${uid}-skin`} cx="35%" cy="25%">
+            <stop offset="0" stopColor="#f2fff0" />
+            <stop offset=".55" stopColor="#bdd8c2" />
+            <stop offset="1" stopColor="#6f9a7c" />
+          </radialGradient>
+          <radialGradient id={`${uid}-plate`} cx="35%" cy="30%">
+            <stop offset="0" stopColor="#536f5e" />
+            <stop offset=".55" stopColor="#263d32" />
+            <stop offset="1" stopColor="#0d1712" />
+          </radialGradient>
+          <filter
+            id={`${uid}-shadow`}
+            x="-30%"
+            y="-30%"
+            width="170%"
+            height="180%"
+          >
+            <feDropShadow
+              dx="3"
+              dy="5"
+              stdDeviation="3"
+              floodColor="#000"
+              floodOpacity=".55"
+            />
+          </filter>
           <pattern
             id={`${uid}-grid`}
             width="24"
@@ -873,14 +951,28 @@ export function ExerciseIllustration({
             />
           </pattern>
         </defs>
-        <rect width="320" height="220" fill={`url(#${uid}-grid)`} />
-        <path d="M30 201H291" stroke="#405047" strokeWidth="2" />
+        <rect width="320" height="220" fill={`url(#${uid}-scene)`} />
+        <rect
+          width="320"
+          height="220"
+          fill={`url(#${uid}-grid)`}
+          opacity=".6"
+        />
+        <path d="M29 201H291L276 219H44Z" fill="#0b120e" opacity=".9" />
+        <path
+          d="M30 201H291M73 201L62 219M118 201L113 219M160 201V219M202 201L207 219M247 201L258 219M39 211H283"
+          stroke="#587060"
+          strokeOpacity=".42"
+          strokeWidth="1"
+        />
         <g
+          className="machine-frame"
           fill="none"
-          stroke="#62766e"
+          stroke={`url(#${uid}-metal)`}
           strokeWidth="6"
           strokeLinecap="round"
           strokeLinejoin="round"
+          filter={`url(#${uid}-shadow)`}
         >
           {stack && (
             <>
@@ -1037,53 +1129,159 @@ export function ExerciseIllustration({
             strokeWidth="2"
           />
         )}
-        <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <g
+          className="athlete-3d"
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          filter={`url(#${uid}-shadow)`}
+        >
           {pose.legs.map((p, i) => (
             <polyline
-              key={i}
+              key={`leg-shadow-${i}`}
               points={line(p)}
-              stroke={i ? "#739787" : "#91b5a0"}
-              strokeWidth="13"
+              stroke="#07100b"
+              strokeOpacity=".7"
+              strokeWidth="19"
+              transform="translate(3 4)"
             />
+          ))}
+          {pose.legs.map((p, i) => (
+            <g key={i}>
+              <polyline
+                points={line(p)}
+                stroke={`url(#${uid}-${i ? "rear-limb" : "limb"})`}
+                strokeWidth="15"
+              />
+              <polyline
+                points={line(p)}
+                stroke="#effff1"
+                strokeOpacity=".28"
+                strokeWidth="3"
+                transform="translate(-2 -2)"
+              />
+              <circle
+                cx={p[1][0]}
+                cy={p[1][1]}
+                r="7"
+                fill={`url(#${uid}-${i ? "rear-limb" : "limb"})`}
+                stroke="#d9efe0"
+                strokeOpacity=".45"
+                strokeWidth="1"
+              />
+            </g>
           ))}
           <polyline
             points={line(pose.torso)}
-            stroke="#c6f36a"
-            strokeWidth="24"
+            stroke="#07100b"
+            strokeOpacity=".75"
+            strokeWidth="32"
+            transform="translate(3 4)"
+          />
+          <polyline
+            points={line(pose.torso)}
+            stroke={`url(#${uid}-body)`}
+            strokeWidth="28"
+          />
+          <polyline
+            points={line(pose.torso)}
+            stroke="#f4ffc5"
+            strokeOpacity=".42"
+            strokeWidth="5"
+            transform="translate(-3 -2)"
           />
           {pose.arms.map((p, i) => (
             <polyline
-              key={i}
+              key={`arm-shadow-${i}`}
               points={line(p)}
-              stroke={i ? "#91b5a0" : "#b7d3bc"}
-              strokeWidth="10"
+              stroke="#07100b"
+              strokeOpacity=".72"
+              strokeWidth="16"
+              transform="translate(3 4)"
             />
           ))}
-          <circle cx={pose.head[0]} cy={pose.head[1]} r="12" fill="#b7d3bc" />
+          {pose.arms.map((p, i) => (
+            <g key={i}>
+              <polyline
+                points={line(p)}
+                stroke={`url(#${uid}-${i ? "rear-limb" : "limb"})`}
+                strokeWidth="12"
+              />
+              <polyline
+                points={line(p)}
+                stroke="#effff1"
+                strokeOpacity=".34"
+                strokeWidth="2.5"
+                transform="translate(-2 -2)"
+              />
+              <circle
+                cx={p[1][0]}
+                cy={p[1][1]}
+                r="5.5"
+                fill={`url(#${uid}-${i ? "rear-limb" : "limb"})`}
+                stroke="#e9faed"
+                strokeOpacity=".5"
+                strokeWidth="1"
+              />
+            </g>
+          ))}
+          <circle
+            cx={pose.head[0] + 3}
+            cy={pose.head[1] + 4}
+            r="14"
+            fill="#06100a"
+            opacity=".7"
+          />
+          <circle
+            cx={pose.head[0]}
+            cy={pose.head[1]}
+            r="14"
+            fill={`url(#${uid}-skin)`}
+            stroke="#e9fae9"
+            strokeOpacity=".6"
+            strokeWidth="1.5"
+          />
+          <ellipse
+            cx={pose.head[0] - 4}
+            cy={pose.head[1] - 5}
+            rx="4"
+            ry="3"
+            fill="#fff"
+            opacity=".5"
+          />
           {pose.legs.map((p, i) => (
-            <path
-              key={i}
-              d={`M${p[2][0] - 3} ${p[2][1] + 2}h15`}
-              stroke="#e1e8dd"
-              strokeWidth="6"
-            />
+            <g key={i}>
+              <path
+                d={`M${p[2][0] - 4} ${p[2][1] + 4}h18`}
+                stroke="#07100b"
+                strokeWidth="10"
+                transform="translate(3 3)"
+              />
+              <path
+                d={`M${p[2][0] - 4} ${p[2][1] + 2}h18`}
+                stroke={`url(#${uid}-limb)`}
+                strokeWidth="8"
+              />
+            </g>
           ))}
         </g>
-        {freeDumbbells.includes(id) &&
-          pose.arms
-            .filter((_, i) => id !== "db-row" || i === 1)
-            .map((p, i) => (
-              <Dumbbell key={i} p={p.at(-1)!} hammer={id === "hammer"} />
-            ))}
-        {["squat", "rdl", "bench", "barbell-row", "upright"].includes(id) && (
-          <Bar
-            p={
-              id === "squat"
-                ? mixPoint([160, 65], [156, 91], phase)
-                : pose.arms[0].at(-1)!
-            }
-          />
-        )}
+        <g filter={`url(#${uid}-shadow)`}>
+          {freeDumbbells.includes(id) &&
+            pose.arms
+              .filter((_, i) => id !== "db-row" || i === 1)
+              .map((p, i) => (
+                <Dumbbell key={i} p={p.at(-1)!} hammer={id === "hammer"} />
+              ))}
+          {["squat", "rdl", "bench", "barbell-row", "upright"].includes(id) && (
+            <Bar
+              p={
+                id === "squat"
+                  ? mixPoint([160, 65], [156, 91], phase)
+                  : pose.arms[0].at(-1)!
+              }
+            />
+          )}
+        </g>
         {["pulldown", "neutral-pulldown"].includes(id) && (
           <path
             d={
@@ -1127,7 +1325,7 @@ export function ExerciseIllustration({
           <g className="motion-caption">
             <rect x="76" y="8" width="168" height="24" rx="12" />
             <text x="160" y="24" textAnchor="middle">
-              {movementLabel(id)}
+              3D · {movementLabel(id)}
             </text>
           </g>
         )}
