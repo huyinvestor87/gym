@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { exercises } from "../data/exercises";
 type Point = [number, number];
 type Pose = { head: Point; torso: Point[]; arms: Point[][]; legs: Point[][] };
@@ -628,35 +628,44 @@ function poseFor(id: string, end: boolean): Pose {
   }
 }
 const line = (points: Point[]) => points.map((p) => p.join(",")).join(" ");
-function Dumbbell({ p, hammer = false }: { p: Point; hammer?: boolean }) {
-  return (
-    <g transform={`translate(${p[0]} ${p[1]}) rotate(${hammer ? 78 : -12})`}>
-      <path d="M-13 0H13" stroke="#dce5dd" strokeWidth="4" />
-      <path d="M-12-7V7M12-7V7" stroke="#c6f36a" strokeWidth="8" />
-    </g>
-  );
-}
-function Bar({ p }: { p: Point }) {
-  return (
-    <g transform={`translate(${p[0]} ${p[1]})`}>
-      <path d="M-58 0H58" stroke="#e3e9df" strokeWidth="4" />
-      <path d="M-44-15V15M44-15V15" stroke="#c6f36a" strokeWidth="10" />
-      <path d="M-53-10V10M53-10V10" stroke="#89997f" strokeWidth="5" />
-    </g>
-  );
-}
-export function ExerciseIllustration({
-  id,
-  compact = false,
-}: {
-  id: string;
-  compact?: boolean;
-}) {
-  const [end, setEnd] = useState(false);
-  const uid = useId();
-  const e = exercises[id];
+const mix = (a: number, b: number, amount: number) => a + (b - a) * amount;
+const mixPoint = (a: Point, b: Point, amount: number): Point => [
+  mix(a[0], b[0], amount),
+  mix(a[1], b[1], amount),
+];
+const mixPose = (start: Pose, finish: Pose, amount: number): Pose => ({
+  head: mixPoint(start.head, finish.head, amount),
+  torso: start.torso.map((point, index) =>
+    mixPoint(point, finish.torso[index] ?? finish.torso.at(-1)!, amount),
+  ),
+  arms: Array.from(
+    { length: Math.max(start.arms.length, finish.arms.length) },
+    (_, armIndex) =>
+      (start.arms[armIndex] ?? start.arms[0]).map((point, pointIndex) =>
+        mixPoint(
+          point,
+          (finish.arms[armIndex] ?? finish.arms[0])[pointIndex] ??
+            (finish.arms[armIndex] ?? finish.arms[0]).at(-1)!,
+          amount,
+        ),
+      ),
+  ),
+  legs: Array.from(
+    { length: Math.max(start.legs.length, finish.legs.length) },
+    (_, legIndex) =>
+      (start.legs[legIndex] ?? start.legs[0]).map((point, pointIndex) =>
+        mixPoint(
+          point,
+          (finish.legs[legIndex] ?? finish.legs[0])[pointIndex] ??
+            (finish.legs[legIndex] ?? finish.legs[0]).at(-1)!,
+          amount,
+        ),
+      ),
+  ),
+});
+
+function exercisePose(id: string, end: boolean): Pose {
   const pose = poseFor(id, id === "reverse-deck" ? !end : end);
-  // Front/side schematics share joints; these variants retain distinctive setup.
   if (id === "machine-lateral") {
     pose.head = [160, 47];
     pose.torso = [
@@ -695,6 +704,124 @@ export function ExerciseIllustration({
       [[129, 169], end ? [172, 128] : [133, 120], end ? [204, 77] : [165, 103]],
     ];
   }
+  return pose;
+}
+
+function Dumbbell({ p, hammer = false }: { p: Point; hammer?: boolean }) {
+  return (
+    <g transform={`translate(${p[0]} ${p[1]}) rotate(${hammer ? 78 : -12})`}>
+      <path d="M-13 0H13" stroke="#dce5dd" strokeWidth="4" />
+      <path d="M-12-7V7M12-7V7" stroke="#c6f36a" strokeWidth="8" />
+    </g>
+  );
+}
+function Bar({ p }: { p: Point }) {
+  return (
+    <g transform={`translate(${p[0]} ${p[1]})`}>
+      <path d="M-58 0H58" stroke="#e3e9df" strokeWidth="4" />
+      <path d="M-44-15V15M44-15V15" stroke="#c6f36a" strokeWidth="10" />
+      <path d="M-53-10V10M53-10V10" stroke="#89997f" strokeWidth="5" />
+    </g>
+  );
+}
+
+function movementLabel(id: string) {
+  if (
+    ["squat", "bulgarian", "lunge", "leg-press", "leg-press-high"].includes(id)
+  )
+    return "HẠ CHẬM · ĐẨY LÊN";
+  if (["rdl", "barbell-row", "db-row", "chest-db-row"].includes(id))
+    return "GIỮ LƯNG · KÉO TẠ";
+  if (
+    [
+      "bench",
+      "incline",
+      "chest-press",
+      "db-shoulder",
+      "shoulder-press",
+    ].includes(id)
+  )
+    return "HẠ CHẬM · ĐẨY TẠ";
+  if (["pull-up", "pulldown", "neutral-pulldown", "straight-arm"].includes(id))
+    return "KÉO XUỐNG · THẢ CHẬM";
+  if (["machine-row", "cable-row", "face-pull"].includes(id))
+    return "KÉO VỀ · THẢ CHẬM";
+  if (
+    [
+      "lateral",
+      "cable-lateral",
+      "machine-lateral",
+      "reverse-deck",
+      "pec-deck",
+    ].includes(id)
+  )
+    return "MỞ / NÂNG · HẠ CHẬM";
+  if (["extension", "curl-leg", "pressdown"].includes(id))
+    return "DUỖI / CUỐN · TRẢ CHẬM";
+  return "ĐÚNG BIÊN ĐỘ · KIỂM SOÁT";
+}
+
+export function ExerciseIllustration({
+  id,
+  compact = false,
+}: {
+  id: string;
+  compact?: boolean;
+}) {
+  const [phase, setPhase] = useState(0);
+  const [playing, setPlaying] = useState(!compact);
+  const [visible, setVisible] = useState(true);
+  const illustrationRef = useRef<HTMLDivElement>(null);
+  const uid = useId();
+  const e = exercises[id];
+  const startPose = exercisePose(id, false);
+  const finishPose = exercisePose(id, true);
+  const pose = mixPose(startPose, finishPose, phase);
+
+  useEffect(() => {
+    if (
+      compact ||
+      !illustrationRef.current ||
+      !("IntersectionObserver" in window)
+    )
+      return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      { rootMargin: "160px 0px" },
+    );
+    observer.observe(illustrationRef.current);
+    return () => observer.disconnect();
+  }, [compact]);
+
+  useEffect(() => {
+    if (
+      !playing ||
+      compact ||
+      !visible ||
+      typeof requestAnimationFrame === "undefined" ||
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+    const startedAt = performance.now();
+    let lastPaint = 0;
+    let frame = 0;
+    const animate = (now: number) => {
+      if (now - lastPaint > 65) {
+        const cycle = ((now - startedAt) % 4200) / 4200;
+        let next = 0;
+        if (cycle < 0.16) next = 0;
+        else if (cycle < 0.44) next = (cycle - 0.16) / 0.28;
+        else if (cycle < 0.66) next = 1;
+        else if (cycle < 0.94) next = 1 - (cycle - 0.66) / 0.28;
+        const eased = next * next * (3 - 2 * next);
+        setPhase(eased);
+        lastPaint = now;
+      }
+      frame = requestAnimationFrame(animate);
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [compact, id, playing, visible]);
 
   const freeDumbbells = [
     "bulgarian",
@@ -719,11 +846,18 @@ export function ExerciseIllustration({
     e.kind === "cable" ||
     ["extension", "curl-leg", "pec-deck", "reverse-deck"].includes(id);
   return (
-    <div className={`illustration ${compact ? "compact" : ""}`}>
-      <svg viewBox="0 0 320 220" role="img" aria-labelledby={uid}>
+    <div
+      ref={illustrationRef}
+      className={`illustration ${compact ? "compact" : ""}`}
+    >
+      <svg
+        viewBox={compact ? "0 0 320 220" : "18 0 284 220"}
+        role="img"
+        aria-labelledby={uid}
+      >
         <title
           id={uid}
-        >{`${e.en} — ${end ? "vị trí thứ hai" : "vị trí bắt đầu"}; ${e.equipment}`}</title>
+        >{`${e.en} — minh họa chuyển động; ${e.equipment}`}</title>
         <defs>
           <pattern
             id={`${uid}-grid`}
@@ -825,19 +959,19 @@ export function ExerciseIllustration({
               <path d="M112 193L238 65M141 200L261 79" />
               <path d="M68 145L112 186H145" strokeWidth="13" stroke="#728d78" />
               <path
-                d={end ? "M191 66L234 106" : "M154 92L196 133"}
+                d={`M${mix(154, 191, phase)} ${mix(92, 66, phase)}L${mix(196, 234, phase)} ${mix(133, 106, phase)}`}
                 strokeWidth="13"
               />
               <circle
-                cx={end ? 219 : 182}
-                cy={end ? 110 : 136}
+                cx={mix(182, 219, phase)}
+                cy={mix(136, 110, phase)}
                 r="18"
                 fill="#233e30"
                 stroke="#9eae92"
               />
               <circle
-                cx={end ? 219 : 182}
-                cy={end ? 110 : 136}
+                cx={mix(182, 219, phase)}
+                cy={mix(136, 110, phase)}
                 r="6"
                 strokeWidth="3"
               />
@@ -884,13 +1018,13 @@ export function ExerciseIllustration({
           )}
           {id === "extension" && (
             <path
-              d={end ? "M190 144L235 140" : "M190 144L194 185"}
+              d={`M190 144L${mix(194, 235, phase)} ${mix(185, 140, phase)}`}
               strokeWidth="9"
             />
           )}
           {id === "curl-leg" && (
             <path
-              d={end ? "M190 144L177 185" : "M190 144L239 145"}
+              d={`M190 144L${mix(239, 177, phase)} ${mix(145, 185, phase)}`}
               strokeWidth="9"
             />
           )}
@@ -945,9 +1079,7 @@ export function ExerciseIllustration({
           <Bar
             p={
               id === "squat"
-                ? end
-                  ? [156, 91]
-                  : [160, 65]
+                ? mixPoint([160, 65], [156, 91], phase)
                 : pose.arms[0].at(-1)!
             }
           />
@@ -956,8 +1088,8 @@ export function ExerciseIllustration({
           <path
             d={
               id === "neutral-pulldown"
-                ? `M141 ${end ? 85 : 25}H175`
-                : `M114 ${end ? 80 : 25}H201`
+                ? `M141 ${mix(25, 85, phase)}H175`
+                : `M114 ${mix(25, 80, phase)}H201`
             }
             stroke="#d2dbc9"
             strokeWidth="5"
@@ -991,18 +1123,57 @@ export function ExerciseIllustration({
           strokeWidth="2"
           strokeLinecap="round"
         />
+        {!compact && (
+          <g className="motion-caption">
+            <rect x="76" y="8" width="168" height="24" rx="12" />
+            <text x="160" y="24" textAnchor="middle">
+              {movementLabel(id)}
+            </text>
+          </g>
+        )}
       </svg>
       {!compact && (
         <div className="pose-controls">
-          <span>Sơ đồ động tác</span>
-          <button
-            type="button"
-            onClick={() => setEnd(!end)}
-            aria-label={`Đổi tư thế ${e.en}`}
-          >
-            {end ? "02 · Vị trí sau" : "01 · Bắt đầu"}{" "}
-            <span aria-hidden="true">↔</span>
-          </button>
+          <span className={playing ? "playing-dot" : ""}>
+            {playing
+              ? "Đang chạy chậm"
+              : phase > 0.5
+                ? "Vị trí cuối"
+                : "Vị trí đầu"}
+          </span>
+          <div>
+            <button
+              type="button"
+              className="pose-step"
+              onClick={() => {
+                setPlaying(false);
+                setPhase(0);
+              }}
+              aria-label={`Xem vị trí đầu ${e.en}`}
+            >
+              Đầu
+            </button>
+            <button
+              type="button"
+              className="pose-play"
+              onClick={() => setPlaying((value) => !value)}
+              aria-label={`${playing ? "Dừng" : "Phát"} minh họa ${e.en}`}
+            >
+              <span aria-hidden="true">{playing ? "Ⅱ" : "▶"}</span>
+              {playing ? "Dừng" : "Phát"}
+            </button>
+            <button
+              type="button"
+              className="pose-step"
+              onClick={() => {
+                setPlaying(false);
+                setPhase(1);
+              }}
+              aria-label={`Xem vị trí cuối ${e.en}`}
+            >
+              Cuối
+            </button>
+          </div>
         </div>
       )}
     </div>

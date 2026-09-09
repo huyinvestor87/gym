@@ -144,10 +144,11 @@ describe("workout interface", () => {
     }
     act(() => root.render(<ExerciseIllustration id="squat" />));
     const before = host.querySelector("svg")!.innerHTML;
-    click(button("01 · Bắt đầu"));
+    click(button("Cuối"));
     expect(host.querySelector("svg")!.innerHTML).not.toBe(before);
+    expect(button("Phát")).toBeTruthy();
     expect(host.querySelector("title")!.textContent).toContain(
-      "vị trí thứ hai",
+      "minh họa chuyển động",
     );
   });
 });

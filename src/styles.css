@@ -530,36 +530,78 @@ progress::-moz-progress-bar {
   white-space: nowrap;
 }
 .illustration {
-  background: linear-gradient(130deg, #202c25, #121c17);
+  background: radial-gradient(circle at 50% 44%, #263b2d 0, #142019 72%);
   position: relative;
+  border-block: 1px solid #34463a;
 }
 .illustration svg {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 245px;
+  max-height: 285px;
+}
+.motion-caption rect {
+  fill: #101712e8;
+  stroke: #78944e;
+  stroke-width: 1;
+}
+.motion-caption text {
+  fill: #d9f69c;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
 }
 .pose-controls {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 0 16px 10px;
+  padding: 9px 12px 11px;
   font-size: 12px;
   color: var(--muted);
+  background: #121a15;
+}
+.pose-controls > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.pose-controls > div {
+  display: flex;
+  gap: 5px;
+}
+.playing-dot::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px #c6f36a18;
 }
 .pose-controls button {
   font-size: 12px;
-  padding: 8px 12px;
+  padding: 7px 10px;
   min-height: 44px;
   background: #2b372b;
   display: flex;
-  gap: 15px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   color: #dce9d3;
+}
+.pose-controls .pose-play {
+  min-width: 72px;
+  background: #344627;
+  border-color: #617b42;
+}
+.pose-controls .pose-step {
+  min-width: 48px;
+  color: #aebcaf;
 }
 .pose-controls button span {
   color: var(--accent);
-  font-size: 18px;
+  font-size: 15px;
 }
 .exercise-body {
   padding: 18px;
@@ -1017,7 +1059,16 @@ dd {
     padding: 16px;
   }
   .illustration svg {
-    max-height: 250px;
+    max-height: 300px;
+  }
+  .pose-controls {
+    padding-inline: 10px;
+  }
+  .pose-controls > span {
+    font-size: 11px;
+  }
+  .pose-controls button {
+    padding-inline: 8px;
   }
   .workout-title h1 {
     font-size: 45px;
@@ -1039,6 +1090,9 @@ dd {
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;
+  }
+  .playing-dot::before {
+    box-shadow: none;
   }
 }
 @media (min-width: 1000px) {
