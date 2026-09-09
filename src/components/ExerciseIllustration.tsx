@@ -1,7 +1,13 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { exercises } from "../data/exercises";
-type Point = [number, number];
-type Pose = { head: Point; torso: Point[]; arms: Point[][]; legs: Point[][] };
+import {
+  AnatomyDefs,
+  AnatomyFigure,
+  MuscleKey,
+  type Point,
+  type Pose,
+} from "./AnatomyFigure";
+import { exerciseMuscles } from "../data/muscles";
 const standing: Pose = {
   head: [160, 47],
   torso: [
@@ -627,7 +633,6 @@ function poseFor(id: string, end: boolean): Pose {
       return standing;
   }
 }
-const line = (points: Point[]) => points.map((p) => p.join(",")).join(" ");
 const mix = (a: number, b: number, amount: number) => a + (b - a) * amount;
 const mixPoint = (a: Point, b: Point, amount: number): Point => [
   mix(a[0], b[0], amount),
@@ -711,7 +716,7 @@ function Dumbbell({ p, hammer = false }: { p: Point; hammer?: boolean }) {
   return (
     <g transform={`translate(${p[0]} ${p[1]}) rotate(${hammer ? 78 : -12})`}>
       <path d="M-13 0H13" stroke="#dce5dd" strokeWidth="4" />
-      <path d="M-12-7V7M12-7V7" stroke="#c6f36a" strokeWidth="8" />
+      <path d="M-12-7V7M12-7V7" stroke="#4e5559" strokeWidth="8" />
     </g>
   );
 }
@@ -719,7 +724,7 @@ function Bar({ p }: { p: Point }) {
   return (
     <g transform={`translate(${p[0]} ${p[1]})`}>
       <path d="M-58 0H58" stroke="#e3e9df" strokeWidth="4" />
-      <path d="M-44-15V15M44-15V15" stroke="#c6f36a" strokeWidth="10" />
+      <path d="M-44-15V15M44-15V15" stroke="#4e5559" strokeWidth="10" />
       <path d="M-53-10V10M53-10V10" stroke="#89997f" strokeWidth="5" />
     </g>
   );
@@ -769,7 +774,14 @@ export function ExerciseIllustration({
   compact?: boolean;
 }) {
   const [phase, setPhase] = useState(0);
-  const [playing, setPlaying] = useState(!compact);
+  const [playing, setPlaying] = useState(
+    () =>
+      !compact &&
+      !(
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      ),
+  );
   const [visible, setVisible] = useState(true);
   const illustrationRef = useRef<HTMLDivElement>(null);
   const uid = useId();
@@ -858,46 +870,12 @@ export function ExerciseIllustration({
         <title
           id={uid}
         >{`${e.en} — minh họa chuyển động; ${e.equipment}`}</title>
+        <AnatomyDefs uid={uid} />
         <defs>
           <linearGradient id={`${uid}-scene`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#24382c" />
-            <stop offset=".7" stopColor="#132019" />
-            <stop offset="1" stopColor="#0c1410" />
-          </linearGradient>
-          <linearGradient
-            id={`${uid}-body`}
-            x1="70"
-            y1="30"
-            x2="220"
-            y2="190"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop offset="0" stopColor="#f0ff9a" />
-            <stop offset=".42" stopColor="#c6f36a" />
-            <stop offset="1" stopColor="#72a92f" />
-          </linearGradient>
-          <linearGradient
-            id={`${uid}-limb`}
-            x1="70"
-            y1="30"
-            x2="220"
-            y2="190"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop offset="0" stopColor="#d9f0dd" />
-            <stop offset=".5" stopColor="#9bc5aa" />
-            <stop offset="1" stopColor="#547c68" />
-          </linearGradient>
-          <linearGradient
-            id={`${uid}-rear-limb`}
-            x1="70"
-            y1="30"
-            x2="220"
-            y2="190"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop offset="0" stopColor="#9ebdab" />
-            <stop offset="1" stopColor="#3d6252" />
+            <stop offset="0" stopColor="#ffffff" />
+            <stop offset=".7" stopColor="#f5f5f4" />
+            <stop offset="1" stopColor="#e9ebec" />
           </linearGradient>
           <linearGradient
             id={`${uid}-metal`}
@@ -907,21 +885,11 @@ export function ExerciseIllustration({
             y2="210"
             gradientUnits="userSpaceOnUse"
           >
-            <stop offset="0" stopColor="#d2ded7" />
-            <stop offset=".25" stopColor="#788e82" />
-            <stop offset=".7" stopColor="#3e5549" />
-            <stop offset="1" stopColor="#9aaca2" />
+            <stop offset="0" stopColor="#8b969b" />
+            <stop offset=".25" stopColor="#68747a" />
+            <stop offset=".7" stopColor="#3e4a50" />
+            <stop offset="1" stopColor="#79868c" />
           </linearGradient>
-          <radialGradient id={`${uid}-skin`} cx="35%" cy="25%">
-            <stop offset="0" stopColor="#f2fff0" />
-            <stop offset=".55" stopColor="#bdd8c2" />
-            <stop offset="1" stopColor="#6f9a7c" />
-          </radialGradient>
-          <radialGradient id={`${uid}-plate`} cx="35%" cy="30%">
-            <stop offset="0" stopColor="#536f5e" />
-            <stop offset=".55" stopColor="#263d32" />
-            <stop offset="1" stopColor="#0d1712" />
-          </radialGradient>
           <filter
             id={`${uid}-shadow`}
             x="-30%"
@@ -934,7 +902,7 @@ export function ExerciseIllustration({
               dy="5"
               stdDeviation="3"
               floodColor="#000"
-              floodOpacity=".55"
+              floodOpacity=".16"
             />
           </filter>
           <pattern
@@ -958,7 +926,7 @@ export function ExerciseIllustration({
           fill={`url(#${uid}-grid)`}
           opacity=".6"
         />
-        <path d="M29 201H291L276 219H44Z" fill="#0b120e" opacity=".9" />
+        <path d="M29 201H291L276 219H44Z" fill="#d9dddf" opacity=".6" />
         <path
           d="M30 201H291M73 201L62 219M118 201L113 219M160 201V219M202 201L207 219M247 201L258 219M39 211H283"
           stroke="#587060"
@@ -1129,142 +1097,7 @@ export function ExerciseIllustration({
             strokeWidth="2"
           />
         )}
-        <g
-          className="athlete-3d"
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          filter={`url(#${uid}-shadow)`}
-        >
-          {pose.legs.map((p, i) => (
-            <polyline
-              key={`leg-shadow-${i}`}
-              points={line(p)}
-              stroke="#07100b"
-              strokeOpacity=".7"
-              strokeWidth="19"
-              transform="translate(3 4)"
-            />
-          ))}
-          {pose.legs.map((p, i) => (
-            <g key={i}>
-              <polyline
-                points={line(p)}
-                stroke={`url(#${uid}-${i ? "rear-limb" : "limb"})`}
-                strokeWidth="15"
-              />
-              <polyline
-                points={line(p)}
-                stroke="#effff1"
-                strokeOpacity=".28"
-                strokeWidth="3"
-                transform="translate(-2 -2)"
-              />
-              <circle
-                cx={p[1][0]}
-                cy={p[1][1]}
-                r="7"
-                fill={`url(#${uid}-${i ? "rear-limb" : "limb"})`}
-                stroke="#d9efe0"
-                strokeOpacity=".45"
-                strokeWidth="1"
-              />
-            </g>
-          ))}
-          <polyline
-            points={line(pose.torso)}
-            stroke="#07100b"
-            strokeOpacity=".75"
-            strokeWidth="32"
-            transform="translate(3 4)"
-          />
-          <polyline
-            points={line(pose.torso)}
-            stroke={`url(#${uid}-body)`}
-            strokeWidth="28"
-          />
-          <polyline
-            points={line(pose.torso)}
-            stroke="#f4ffc5"
-            strokeOpacity=".42"
-            strokeWidth="5"
-            transform="translate(-3 -2)"
-          />
-          {pose.arms.map((p, i) => (
-            <polyline
-              key={`arm-shadow-${i}`}
-              points={line(p)}
-              stroke="#07100b"
-              strokeOpacity=".72"
-              strokeWidth="16"
-              transform="translate(3 4)"
-            />
-          ))}
-          {pose.arms.map((p, i) => (
-            <g key={i}>
-              <polyline
-                points={line(p)}
-                stroke={`url(#${uid}-${i ? "rear-limb" : "limb"})`}
-                strokeWidth="12"
-              />
-              <polyline
-                points={line(p)}
-                stroke="#effff1"
-                strokeOpacity=".34"
-                strokeWidth="2.5"
-                transform="translate(-2 -2)"
-              />
-              <circle
-                cx={p[1][0]}
-                cy={p[1][1]}
-                r="5.5"
-                fill={`url(#${uid}-${i ? "rear-limb" : "limb"})`}
-                stroke="#e9faed"
-                strokeOpacity=".5"
-                strokeWidth="1"
-              />
-            </g>
-          ))}
-          <circle
-            cx={pose.head[0] + 3}
-            cy={pose.head[1] + 4}
-            r="14"
-            fill="#06100a"
-            opacity=".7"
-          />
-          <circle
-            cx={pose.head[0]}
-            cy={pose.head[1]}
-            r="14"
-            fill={`url(#${uid}-skin)`}
-            stroke="#e9fae9"
-            strokeOpacity=".6"
-            strokeWidth="1.5"
-          />
-          <ellipse
-            cx={pose.head[0] - 4}
-            cy={pose.head[1] - 5}
-            rx="4"
-            ry="3"
-            fill="#fff"
-            opacity=".5"
-          />
-          {pose.legs.map((p, i) => (
-            <g key={i}>
-              <path
-                d={`M${p[2][0] - 4} ${p[2][1] + 4}h18`}
-                stroke="#07100b"
-                strokeWidth="10"
-                transform="translate(3 3)"
-              />
-              <path
-                d={`M${p[2][0] - 4} ${p[2][1] + 2}h18`}
-                stroke={`url(#${uid}-limb)`}
-                strokeWidth="8"
-              />
-            </g>
-          ))}
-        </g>
+        <AnatomyFigure pose={pose} focus={exerciseMuscles[id]} uid={uid} />
         <g filter={`url(#${uid}-shadow)`}>
           {freeDumbbells.includes(id) &&
             pose.arms
@@ -1317,7 +1150,7 @@ export function ExerciseIllustration({
                     : "M43 117V71l-5 7m5-7l5 7"
           }
           fill="none"
-          stroke="#c6f36a"
+          stroke="#4e5559"
           strokeWidth="2"
           strokeLinecap="round"
         />
@@ -1325,11 +1158,12 @@ export function ExerciseIllustration({
           <g className="motion-caption">
             <rect x="76" y="8" width="168" height="24" rx="12" />
             <text x="160" y="24" textAnchor="middle">
-              3D · {movementLabel(id)}
+              {movementLabel(id)}
             </text>
           </g>
         )}
       </svg>
+      {!compact && <MuscleKey focus={exerciseMuscles[id]} uid={uid} />}
       {!compact && (
         <div className="pose-controls">
           <span className={playing ? "playing-dot" : ""}>

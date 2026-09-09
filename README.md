@@ -6,7 +6,7 @@ A mobile-first personal workout journal in Vietnamese, built with Vite, React 18
 
 - Home screen opens the active or next session; sessions are a rotation, not fixed weekdays.
 - Exercise cards include Vietnamese/English names, sets, rep targets, RIR, rest, muscles, equipment, setup, cues and mistakes.
-- Original reusable SVG equipment/movement diagrams with two selectable positions; no remote image dependencies.
+- Original animated anatomical SVG exercise guides: grayscale muscle contours, red/orange primary muscles and pale-orange secondary muscles. Includes pause/play, selectable start/end positions, Vietnamese muscle labels and expandable front/back muscle maps. No remote image dependencies.
 - Actual kg/reps, individual set completion, optional actual RIR and form confirmation; completion starts the prescribed rest timer.
 - Pause/resume, +30 seconds and close timer. A wall-clock deadline remains accurate after backgrounding/reloading. There is no background alarm or push notification.
 - LocalStorage saves the active workout, timer, next session and up to 180 completed sessions. History and previous per-set values are available locally.
@@ -21,7 +21,7 @@ For 2–3 set prescriptions, start with 2 and optionally add the third set. Rest
 
 Requested seated cable row in Back A and plate-loaded row in Back B are visible, disabled-by-default optional additions, preserving the source plan's default volume. Lateral Raise Machine replaces Cable Lateral Raise at the same 2 × 12–20 prescription. Upright row is optional as specified in the source plan. Pull-ups support negative kg for assistance, zero for bodyweight and positive kg for added load. Dumbbell cards state whether kg is per hand; unilateral cards specify reps per side.
 
-The repository contains machine categories **but no original gym photographs**. SVGs depict those categories, not verified exact brands, models, upholstery or geometry. They are simplified recognition/movement aids rather than a substitute for coaching.
+The repository contains machine categories **but no original gym photographs**. SVGs depict those categories, not verified exact brands, models, upholstery or geometry. They are simplified anatomical vector recognition/movement aids, not photorealistic models or a substitute for coaching. Muscle colors show qualitative targets, not measured activation percentages. Some supporting stabilizers are omitted for clarity; front/back maps expose muscles obscured by an exercise pose.
 
 ## Local development
 
@@ -78,8 +78,10 @@ src/
   types.ts                        Exercise, prescription and saved-state types
   data/exercises.ts               Bilingual library and short technique cues
   data/plan.ts                    Six-session prescriptions and bench targets
+  data/muscles.ts                 Primary/secondary muscle mapping for every exercise
   components/ExerciseCard.tsx     Set logger and per-exercise guidance
   components/ExerciseIllustration.tsx  Original SVG poses and equipment
+  components/AnatomyFigure.tsx    Reusable anatomical body, muscle shading and maps
   components/RestTimer.tsx        Persistent deadline timer controls
   lib/workout.ts                  Storage validation, lifecycle, progression
 public/favicon.svg

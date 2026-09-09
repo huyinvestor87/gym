@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import App from "../src/App";
 import { ExerciseIllustration } from "../src/components/ExerciseIllustration";
 import { exercises } from "../src/data/exercises";
+import { exerciseMuscles, muscleNames } from "../src/data/muscles";
 import { STORAGE_KEY } from "../src/lib/workout";
 let root: Root;
 let host: HTMLDivElement;
@@ -141,6 +142,17 @@ describe("workout interface", () => {
       expect(markup).toContain("<svg");
       expect(markup).toContain(e.en.replaceAll("&", "&amp;"));
       expect(markup).not.toContain("NaN");
+      const focus = exerciseMuscles[e.id];
+      expect(focus.primary.length).toBeGreaterThan(0);
+      for (const muscle of focus.primary) {
+        expect(markup).toContain(
+          `data-muscle="${muscle}" data-activation="primary"`,
+        );
+        expect(markup).toContain(muscleNames[muscle]);
+        expect(focus.secondary).not.toContain(muscle);
+      }
+      expect(markup).toContain("Mặt trước");
+      expect(markup).toContain("Mặt sau");
     }
     act(() => root.render(<ExerciseIllustration id="squat" />));
     const before = host.querySelector("svg")!.innerHTML;
